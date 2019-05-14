@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MENRVA Equipment Manager</title>
+  <style>
+    body {font-family: Arial, Helvetica, sans-serif;}
+    * {box-sizing: border-box;}
+    
+    ::placeholder {
+      font-style: italic;
+    }
+
+    .form-inline {
+      display: flex;
+      flex-flow: row wrap;
+      align-items: flex-end;
+      margin: 10px 0 0 0;
+    }
+    
+    .form-inline label{
+      display: block;
+      margin: 5px 10px 5px 0;
+    }
+
+    .form-inline input, .form-inline select{
+      margin: 5px 10px 5px 0;
+      padding: 5px;
+    }
+
+    .form-inline button{
+      margin: 5px 10px 5px 0;
+      padding: 5px 10px;
+    }
+
+    @media (max-width:800px) {
+      .form-inline input {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Add New Asset</h2>
+  Add a new piece of equipment.
+  <form class="form-inline" action="/new" method="POST">
+    <div>
+      <label for="asset_number">Asset Number</label>
+      <input type="number" value="" name="asset_number" id="asset_number" style="width:8em;">
+    </div>
+    <div>
+      <label for="nickname">Nickname</label>
+      <input type="text" placeholder="e.g. DAQ1" name="nickname" id="nickname">
+    </div>
+    <div>
+      <label for="full_name">Full Name</label>
+      <input type="text" placeholder="Full name" name="full_name" id="full_name">
+    </div>
+  </fieldset>
+    <div>
+      <label for="category">Category</label>
+      <select name="category" id="category">
+        <option value="1">Test equipment</option>
+        <option value="2">Prototyping</option>
+        <option value="3">Data acquisition</option>
+        <option value="4">Computers</option>
+        <option value="5">Computer accessories</option>
+        <option value="6">Robotics</option>
+        <option value="7">Sensors</option>
+        <option value="8">Motion tracker</option>
+        <option value="9">Clinical devices</option>
+        <option value="10">Tools</option>
+        <option value="0">Other</option>
+      </select>
+    </div>
+    <div>
+      <label for="manufacturer">Manufacturer</label>
+      <input type="text" placeholder="e.g. National Instruments" name="manufacturer" id="manufacturer">
+    </div>
+    <div>
+      <label for="model">Model</label>
+      <input type="text" placeholder="e.g. USB-6001" name="model" id="model">
+    </div>
+    <div>
+      <label for="serial_number">Serial number</label>
+      <input type="text" placeholder="Serial number" name="serial_number" id="serial_number">
+    </div>
+    <div>
+      <label for="campus">Campus</label>
+      <select name="campus" id="campus">
+        <option value="1">Burnaby</option>
+        <option value="2">Surrey</option>
+        <option value="3">BIT Office</option>
+      </select>
+    </div>
+    <div>
+      <label for="location">Location</label>
+      <input type="text" placeholder="e.g. Cabinet 2" name="location" id="location">
+    </div>
+    <div>
+      <label for="status">Status</label>
+      <select name="status" id="status">
+        <option value="1">Available</option>
+        <option value="2">In Use</option>
+        <option value="3">Out of Service</option>
+        <option value="4">Missing</option>
+        <option value="5">Unknown</option>
+      </select>
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+  <div>
+    <h2>Replace last item</h2>
+    <button id="update"> Replace last item </button>
+  </div>
+  <div>
+    <h2>Delete Asset</h2>
+    <button id="delete">Delete</button>
+  </div>
+  <ul class="test">
+    <% for(var i=0; i<test.length; i++) {%>
+      <li class="test">
+      <span><%= test[i]._id %></span>
+      <span><%= test[i].nickname %></span>
+      </li>
+    <% } %>
+  </ul>
+  <script src="main.js"></script>
+</body>
+</html>
