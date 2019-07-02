@@ -2,9 +2,10 @@
 const express = require('express');
 const request = require('request');
 const bodyParser = require('body-parser');
-var mongoClient = require('mongodb').MongoClient;
+const mongoClient = require('mongodb').MongoClient;
 var objectId = require('mongodb').ObjectId;
-var dbUrl = "mongodb://localhost/equipdb";
+//var dbUrl = "mongodb://localhost/equipdb";
+var dbUrl = "mongodb+srv://eman-admin:TnlcEcrokHqWwFkk@eman-db-h7ewg.mongodb.net/test?retryWrites=true&w=majority";
 require('dotenv').config();
 
 var app = express();
@@ -42,7 +43,8 @@ const Campus = Object.freeze({
 })
 
 const PORT=80;
-const COLLECTION='test';
+//const COLLECTION='test-eq';
+const COLLECTION='main';
 
 var db
 mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
@@ -264,7 +266,7 @@ function printQueryOutput(item, isEphemeral=true) {
                     },
                     {
                         "title": "Model",
-                        "value": item.model_number,
+                        "value": item.model,
                         "short": true
                     },
                     {
