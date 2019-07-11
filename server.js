@@ -41,7 +41,7 @@ const Campus = Object.freeze({
     BITOFFICE: { value: 3, name: 'BIT Office' }
 })
 
-const PORT = 80;
+const PORT = 3000;
 const COLLECTION = 'main';
 
 const CHANNEL_ID = "GJKRMQHJM"; // "CLE7TDLVC"
