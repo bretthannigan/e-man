@@ -4,7 +4,6 @@ const request = require('request');
 const bodyParser = require('body-parser');
 const mongoClient = require('mongodb').MongoClient;
 var objectId = require('mongodb').ObjectId;
-//var dbUrl = "mongodb://localhost/equipdb";
 var dbUrl = "mongodb+srv://eman-admin:TnlcEcrokHqWwFkk@eman-db-h7ewg.mongodb.net/test?retryWrites=true&w=majority";
 require('dotenv').config();
 
@@ -43,7 +42,6 @@ const Campus = Object.freeze({
 })
 
 const PORT=80;
-//const COLLECTION='test-eq';
 const COLLECTION='main';
 
 var db
@@ -97,9 +95,63 @@ app.post('/query', function(req, res) {
         }
         if (item) {
             var message = printQueryOutput(item);
-            message.text = "Asset number *" + req.body.text + "* was found:";
+            message.blocks.unshift(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Asset number *" + req.body.text + "* was found:"
+                    }
+                }
+            )
         } else {
             var message = "Asset number *" + req.body.text + "* was not found.";
+        }
+        res.send(message);
+    });
+});
+
+app.post('/search', function(req, res) {
+    const MAX_RESULTS = 5;
+    db.collection(COLLECTION).createIndex({nickname: "text", full_name: "text", manufacturer: "text", model: "text", serial_number: "text", location: "text"});
+    db.collection(COLLECTION)
+    .find({$text: { $search: req.body.text}}, {nickname: 1, full_name: 1, manufacturer: 1, model: 1, serial_number: 1, location: 1})//, { score: { $meta: "textScore"}})
+    .project({ score: { $meta: "textScore"}})
+    .sort({score: { $meta: "textScore"}})
+    .toArray(function (err, items) {
+        if (err) {
+            console.log(err);
+            res.sendStatus(500);
+            return;
+        } 
+        console.log(items)
+        if (items.length) {
+            var message = printQueryOutput(items);
+            if (items.length<=MAX_RESULTS) {
+                message.blocks.unshift(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "Found " + items.length + " asset(s) matching search \"*" + req.body.text + "*\":"
+                        }
+                    }
+                )
+            } else {
+                message.blocks.unshift(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "Found the top " + MAX_RESULTS + " assets matching search \"*" + req.body.text + "*\":"
+                        }
+                    }
+                )
+            }
+        } else {
+            console.log('search else')
+            console.log(items)
+            var message = "Did not find any matching assets for search \"*" + req.body.text + "*\".";
         }
         res.send(message);
     });
@@ -131,12 +183,19 @@ app.post('/checkout', function(req, res) {
                         date_due: req.body.date_due
                     }
                 }, {
-                    returnOriginal: false
+                    returnOriginal: false 
                 }, (err, result) => {
                     if (err) return res.send(err);
                     var message = printQueryOutput(result.value, false);
-                    message.text = "<@" + req.body.user_id + ">";
-                    message.text = message.text + " successfully checked out asset number *" + args[0] + "* for *" + (req.body.date_due ? args[1] : "unlimited") + "* day(s).";
+                    message.blocks.unshift(
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "<@" + req.body.user_id + ">" + " successfully checked out asset number *" + args[0] + "* for *" + (req.body.date_due ? args[1] : "unlimited") + "* day(s)."
+                            }
+                        }
+                    );
                     res.send(message);
                 });
             } else {
@@ -173,8 +232,16 @@ app.post('/checkin', function(req, res) {
                 }, (err, result) => {
                     if (err) return res.send(err);
                     var message = printQueryOutput(result.value, false);
-                    message.text = "<@" + req.body.user_id + ">";
-                    message.text = message.text + " successfully checked in asset number *" + req.body.text + "*.";
+
+                    message.blocks.unshift(
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "<@" + req.body.user_id + ">" + " successfully checked in asset number *" + req.body.text + "*."
+                            }
+                        }
+                    );
                     res.send(message);
                 });
             } else {
@@ -199,24 +266,6 @@ app.post('/new', function(req, res) {
     })
 });
 
-app.put('/edit', function(req, res) {
-    req.body.date_modified = new Date(Date.now()).toISOString();
-    db.collection(COLLECTION)
-    .findOneAndUpdate({full_name: 'a'}, {
-      $set: {
-        full_name: req.body.full_name,
-        nickname: req.body.nickname,
-        date_modified: req.body.date_modified
-      }
-    }, {
-      sort: {_id: -1},
-      upsert: true
-    }, (err, result) => {
-      if (err) return res.send(err)
-      res.send(result)
-    });
-});
-
 app.delete('/delete', (req, res) => {
     db.collection(COLLECTION)
     .findOneAndDelete({full_name: req.body.full_name},
@@ -227,70 +276,92 @@ app.delete('/delete', (req, res) => {
 });
 
 function printQueryOutput(item, isEphemeral=true) {
-    return {
+    message = {
+        "channel": "CLE7TDLVC",
         "response_type": isEphemeral ? "ephemeral" : "in_channel",
-        "attachments": [
+    };
+    message.blocks = new Array();
+    if (Array.isArray(item)) {
+        for (var i=0; i<item.length; i++) {
+            message.blocks.push(
+                {
+                "type": "divider"
+                },
+                printAssetInfo(item[i]),
+                printDateInfo(item[i])
+            )
+        }
+    } else {
+        message.blocks.push(
             {
-                "fallback": "Cannot display attachment.",
-                "color": Status[item.status].colour,
-                "fields": [
-                    {
-                        "title": "Asset number",
-                        "value": item.asset_number,
-                        "short": true
-                    },
-                    {
-                        "title": "Status",
-                        "value": printStatusLine(item),
-                        "short": true
-                    },
-                    {
-                        "title": "Nickname",
-                        "value": item.nickname,
-                        "short": true
-                    },
-                    {
-                        "title": "Full Name",
-                        "value": item.full_name,
-                        "short": true
-                    },
-                    {
-                        "title": "Category",
-                        "value": Category[item.category].name,
-                        "short": true
-                    },
-                    {
-                        "title": "Manufacturer",
-                        "value": item.manufacturer,
-                        "short": true
-                    },
-                    {
-                        "title": "Model",
-                        "value": item.model,
-                        "short": true
-                    },
-                    {
-                        "title": "Serial Number",
-                        "value": item.serial_number,
-                        "short": true
-                    },
-                    {
-                        "title": "Campus",
-                        "value": Campus[item.campus].name,
-                        "short": true
-                    },
-                    {
-                        "title": "Location",
-                        "value": item.location,
-                        "short": true
-                    }
-                ],
-                "footer": "Entry last modified" + (item.user_id ? " by <@" + item.user_id + ">" : ""),
-                "ts": (Date.parse(item.date_modified) / 1000).toFixed(0)
+                "type": "divider"
+            },
+            printAssetInfo(item),
+            printDateInfo(item)
+        )
+    };
+    return message;
+};
+
+function printAssetInfo(item) {
+    return {
+        "type": "section",
+        "fields": [
+            {
+                "type": "mrkdwn",
+                "text": "*Asset number:*\n" + item.asset_number
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Status:*\n" + printStatusLine(item)
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Nickname:*\n" + item.nickname
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Full name:*\n" + item.full_name
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Category:*\n" + Category[item.category].name
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Manufacturer:*\n" + item.manufacturer
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Model:*\n" + item.model
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Serial number:*\n" + item.serial_number
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Campus:*\n" + Campus[item.campus].name
+            },
+            {
+                "type": "mrkdwn",
+                "text": "*Location:*\n" + item.location
             }
         ]
-    };
-}
+    }
+};
+
+function printDateInfo(item) {
+    return {
+        "type": "context",
+        "elements": [
+            {
+                "type": "mrkdwn",
+                "text": "Entry last modified" + (item.user_id ? " by <@" + item.user_id + ">" : "") + " on <!date^" + (Date.parse(item.date_modified) / 1000).toFixed(0) + "^{date_num} {time}|" + item.date_modified.toString() + ">"
+            }
+        ]
+    }
+};
 
 function printStatusLine(item) {
     line = Status[item.status].symbol + " " + Status[item.status].name;
