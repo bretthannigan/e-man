@@ -41,8 +41,10 @@ const Campus = Object.freeze({
     BITOFFICE: { value: 3, name: 'BIT Office' }
 })
 
-const PORT=80;
-const COLLECTION='main';
+const PORT = 80;
+const COLLECTION = 'main';
+
+const CHANNEL_ID = "GJKRMQHJM"; // "CLE7TDLVC"
 
 var db
 mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
@@ -158,6 +160,10 @@ app.post('/search', function(req, res) {
 });
 
 app.post('/checkout', function(req, res) {
+    if (req.body.channel_id!=CHANNEL_ID) {
+        res.send("Please use the <#" + CHANNEL_ID + "> channel for checking out assets.");
+        return;
+    };
     args = req.body.text.split(' ');
     req.body.date_modified = new Date(Date.now()).toISOString();
     if (args.length == 2) {
@@ -211,6 +217,10 @@ app.post('/checkout', function(req, res) {
 });
 
 app.post('/checkin', function(req, res) {
+    if (req.body.channel_id!=CHANNEL_ID) {
+        res.send("Please use the <#" + CHANNEL_ID + "> channel for checking in assets.");
+        return;
+    };
     req.body.date_modified = new Date(Date.now()).toISOString();
     db.collection(COLLECTION)
     .findOne({asset_number: req.body.text}, function (err, item) {
@@ -277,7 +287,6 @@ app.delete('/delete', (req, res) => {
 
 function printQueryOutput(item, isEphemeral=true) {
     message = {
-        "channel": "CLE7TDLVC",
         "response_type": isEphemeral ? "ephemeral" : "in_channel",
     };
     message.blocks = new Array();
