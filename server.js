@@ -248,7 +248,7 @@ app.post('/checkin', function(req, res) {
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": "<@" + req.body.user_id + ">" + " successfully checked in asset number *" + req.body.text + "*."
+                                "text": "<@" + req.body.user_id + ">" + " successfully checked in asset number *" + req.body.text + "*. Thanks!"
                             }
                         }
                     );
