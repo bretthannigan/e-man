@@ -10,7 +10,7 @@ module.exports = {
       key: 'C:/Users/bchannig/.ssh/ensc-menrva-19.pem',
       ref: 'origin/master',
       repo: 'git@github.com:bretthannigan/e-man.git',
-      path: '/home/ubuntu/e-man',
+      path: './',
       'post-deploy': 'npm install && pm2 startOrRestart ecosystem.config.js'
     }
   }
