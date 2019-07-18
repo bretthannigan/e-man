@@ -4,14 +4,33 @@ const request = require('request');
 const bodyParser = require('body-parser');
 const mongoClient = require('mongodb').MongoClient;
 var objectId = require('mongodb').ObjectId;
-var dbUrl = "mongodb+srv://eman-admin:TnlcEcrokHqWwFkk@eman-db-h7ewg.mongodb.net/test?retryWrites=true&w=majority";
 require('dotenv').config();
+var dbUrl = "mongodb+srv://" + process.env.DB_USER + ":" + process.env.DB_PW + "@eman-db-h7ewg.mongodb.net/test?retryWrites=true&w=majority";
 
 var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('public'));
 app.use(bodyParser.json());
 app.set('view engine', 'ejs');
+
+// var passport = require('passport-slack').Strategy;
+// passport.use(new SlackStrategy({
+//     clientID: process.env.CLIENTID,
+//     clientSecret: process.env.CLIENTSECRET,
+//     callbackURL: 'https://'
+// },
+// function(token, tokenSecret, profile, cb) {
+//     return cb(null, profile);
+// }));
+// passport.serializeUser(function(user, done) {
+//     done(null, user);
+// });
+// passport.deserializeUser(function(obj, done) {
+//     done(null, user);
+// });
+// var expressSession = require('express-session');
+// var cookieParser = require('cookie-parser');
+// const exphbs = require('express-handlebars')
 
 const Status = Object.freeze({
     AVAILABLE: { value: 1, name: 'Available', symbol: ':heavy_check_mark:', colour: '#008000' },
@@ -41,22 +60,22 @@ const Campus = Object.freeze({
     BITOFFICE: { value: 3, name: 'BIT Office' }
 })
 
-const PORT = 3000;
 const COLLECTION = 'main';
-
-const CHANNEL_ID = "GJKRMQHJM"; // "CLE7TDLVC"
 
 var db
 mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
     if (err) throw err;
     db = client.db(COLLECTION);
-    app.listen(PORT, function() {
+    app.listen(process.env.PORT, function() {
         console.log('listening on 80.');
     });
 });
 
-// This route handles GET requests to our root ngrok address and responds with the same "Ngrok is working message" we used before
 app.get('/', function(req, res) {
+    res.render('auth.ejs');
+});
+
+app.get('/dashboard', function(req, res) {
     db.collection(COLLECTION).find().toArray((err, result) => {
         if (err) throw err;
         res.render('index.ejs', {test: result});
@@ -65,24 +84,29 @@ app.get('/', function(req, res) {
 
 // This route handles get request to a /oauth endpoint. We'll use this endpoint for handling the logic of the Slack oAuth process behind our app.
 app.get('/oauth', function(req, res) {
+    console.log('oauth')
     // When a user authorizes an app, a code query parameter is passed on the oAuth endpoint. If that code is not there, we respond with an error message
     if (!req.query.code) {
         res.status(500);
-        res.send({"Error": "Looks like we're not getting code."});
-        console.log("Looks like we're not getting code.");
+        res.send({"Error": "Looks like we're not getting a code."});
+        console.log("Looks like we're not getting a code.");
     } else {
         // If it's there...
-
         // We'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
+        console.log(req)
         request({
             url: 'https://slack.com/api/oauth.access', //URL to hit
-            qs: {code: req.query.code, client_id: CLIENTID, client_secret: CLIENTSECRET}, //Query string data
+            qs: {code: req.query.code, client_id: process.env.CLIENTID, client_secret: process.env.CLIENTSECRET}, //Query string data
             method: 'GET', //Specify the method
-
         }, function (error, response, body) {
+            var JSONresponse = JSON.parse(body);
             if (error) {
                 console.log(error);
+            } else if (!JSONresponse.ok) {
+                console.log(JSONresponse)
+                res.send("Error encountered: \n"+JSON.stringify(JSONresponse)).status(200).end();
             } else {
+                console.log(JSONresponse);
                 res.json(body);
             }
         })
@@ -160,8 +184,8 @@ app.post('/search', function(req, res) {
 });
 
 app.post('/checkout', function(req, res) {
-    if (req.body.channel_id!=CHANNEL_ID) {
-        res.send("Please use the <#" + CHANNEL_ID + "> channel for checking out assets.");
+    if (req.body.channel_id!=process.env.CHANNEL_ID) {
+        res.send("Please use the <#" + process.env.CHANNEL_ID + "> channel for checking out assets.");
         return;
     };
     args = req.body.text.split(' ');
@@ -217,8 +241,8 @@ app.post('/checkout', function(req, res) {
 });
 
 app.post('/checkin', function(req, res) {
-    if (req.body.channel_id!=CHANNEL_ID) {
-        res.send("Please use the <#" + CHANNEL_ID + "> channel for checking in assets.");
+    if (req.body.channel_id!=process.env.CHANNEL_ID) {
+        res.send("Please use the <#" + process.env.CHANNEL_ID + "> channel for checking in assets.");
         return;
     };
     req.body.date_modified = new Date(Date.now()).toISOString();
