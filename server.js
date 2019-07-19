@@ -235,7 +235,7 @@ app.post('/new', function(req, res) {
 //----------Slash Commands----------
 
 var verifySlackRequest = function (req, res, next) {
-    const hmac = crypto.createHmac('sha256', '90b69ba2aef617b47303ba13967fac4f');
+    const hmac = crypto.createHmac('sha256', process.env.SIGNING_SECRET);
     var slack_signature = req.headers['x-slack-signature'];
     var signature = slack_signature.split('=', 1);
     version = signature[0];
