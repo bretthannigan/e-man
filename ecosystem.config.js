@@ -12,7 +12,7 @@ module.exports = {
       repo: 'git@github.com:bretthannigan/e-man.git',
       path: '/home/ubuntu/e-man',
       'pre-deploy': 'git reset --hard',
-      'post-deploy': 'npm install && pm2 startOrRestart ecosystem.config.js'
+      'post-deploy': 'npm install && cp ~/.env .env && pm2 startOrRestart ecosystem.config.js'
     }
   }
 }

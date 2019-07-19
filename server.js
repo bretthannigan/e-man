@@ -7,7 +7,8 @@ const qs = require('qs');
 var mongoDb = require('mongodb');
 const mongoClient = mongoDb.MongoClient;
 var objectId = require('mongodb').ObjectId;
-require('dotenv').config();
+path = require('path');
+require('dotenv').config({path: path.join(__dirname, '.env')});
 var dbUrl = "mongodb+srv://" + process.env.DB_USER + ":" + process.env.DB_PW + "@eman-db-h7ewg.mongodb.net/test?retryWrites=true&w=majority";
 
 var app = express();
@@ -17,7 +18,6 @@ app.use(bodyParser.json());
 app.set('view engine', 'ejs');
 
 var favicon = require('serve-favicon');
-path = require('path');
 app.use(favicon(path.join(__dirname + '/views/icons/favicon.ico')));
 
 var passport = require('passport')
