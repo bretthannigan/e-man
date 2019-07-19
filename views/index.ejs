@@ -2,46 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
   <title>MENRVA Equipment Manager</title>
-  <style>
-    body {font-family: Arial, Helvetica, sans-serif;}
-    * {box-sizing: border-box;}
-    
-    ::placeholder {
-      font-style: italic;
-    }
-
-    .form-inline {
-      display: flex;
-      flex-flow: row wrap;
-      align-items: flex-end;
-      margin: 10px 0 0 0;
-    }
-    
-    .form-inline label{
-      display: block;
-      margin: 5px 10px 5px 0;
-    }
-
-    .form-inline input, .form-inline select{
-      margin: 5px 10px 5px 0;
-      padding: 5px;
-    }
-
-    .form-inline button{
-      margin: 5px 10px 5px 0;
-      padding: 5px 10px;
-    }
-
-    @media (max-width:800px) {
-      .form-inline input {
-        flex-direction: column;
-        align-items: stretch;
-      }
-    }
-  </style>
 </head>
 <body>
+  <h1>MENRVA Equipment Manager - Dashboard</h1>
+  Logged in as: <%= user.displayName %> <img src="<%= user.team.image_34 %>" alt="User image"> <a href="../logoff">Log Out</a>
   <h2>Add New Asset</h2>
   Add a new piece of equipment.
   <form class="form-inline" action="/new" method="POST">
@@ -110,22 +76,40 @@
     </div>
     <button type="submit">Submit</button>
   </form>
-  <div>
-    <h2>Replace last item</h2>
-    <button id="update"> Replace last item </button>
-  </div>
-  <div>
-    <h2>Delete Asset</h2>
-    <button id="delete">Delete</button>
-  </div>
-  <ul class="test">
-    <% for(var i=0; i<test.length; i++) {%>
-      <li class="test">
-      <span><%= test[i]._id %></span>
-      <span><%= test[i].nickname %></span>
-      </li>
+  <h2>List of Assets</h2>
+  <table class="data" style="width:800px">
+    <th>Asset number</th>
+    <th>Status</th>
+    <th>Nickname</th>
+    <th>Full name</th>
+    <th>Category</th>
+    <th>Manufacturer</th>
+    <th>Model</th>
+    <th>Serial number</th>
+    <th>Campus</th>
+    <th>Location</th>
+    <th><span class="mydelete">Delete</span></th>
+    <% for(var i=0; i<data.length; i++) {%>
+      <tr>
+        <td><%= data[i].asset_number %></td>
+        <td><%= data[i].status %></td>
+        <td><%= data[i].nickname %></td>
+        <td><%= data[i].full_name %></td>
+        <td><%= data[i].category %></td>
+        <td><%= data[i].manufacturer %></td>
+        <td><%= data[i].model %></td>
+        <td><%= data[i].serial_number %></td>
+        <td><%= data[i].campus %></td>
+        <td><%= data[i].location %></td>
+        <td>
+          <form method="POST" action="/delete/<%= data[i]._id %>?_method=DELETE">
+            <input type="hidden" name="_method" value="delete"/>
+            <button type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
     <% } %>
-  </ul>
+  </table>
   <script src="main.js"></script>
 </body>
 </html>

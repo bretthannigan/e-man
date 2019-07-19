@@ -2,7 +2,10 @@
 const express = require('express');
 const request = require('request');
 const bodyParser = require('body-parser');
-const mongoClient = require('mongodb').MongoClient;
+const crypto = require('crypto');
+const qs = require('qs');
+var mongoDb = require('mongodb');
+const mongoClient = mongoDb.MongoClient;
 var objectId = require('mongodb').ObjectId;
 require('dotenv').config();
 var dbUrl = "mongodb+srv://" + process.env.DB_USER + ":" + process.env.DB_PW + "@eman-db-h7ewg.mongodb.net/test?retryWrites=true&w=majority";
@@ -13,24 +16,38 @@ app.use(express.static('public'));
 app.use(bodyParser.json());
 app.set('view engine', 'ejs');
 
-// var passport = require('passport-slack').Strategy;
-// passport.use(new SlackStrategy({
-//     clientID: process.env.CLIENTID,
-//     clientSecret: process.env.CLIENTSECRET,
-//     callbackURL: 'https://'
-// },
-// function(token, tokenSecret, profile, cb) {
-//     return cb(null, profile);
-// }));
-// passport.serializeUser(function(user, done) {
-//     done(null, user);
-// });
-// passport.deserializeUser(function(obj, done) {
-//     done(null, user);
-// });
-// var expressSession = require('express-session');
-// var cookieParser = require('cookie-parser');
-// const exphbs = require('express-handlebars')
+var favicon = require('serve-favicon');
+path = require('path');
+app.use(favicon(path.join(__dirname + '/views/icons/favicon.ico')));
+
+var passport = require('passport')
+var SlackStrategy = require('passport-slack-oauth2').Strategy;
+passport.use(new SlackStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    skipUserProfile: false,
+    scope: ['identity.basic', 'identity.email', 'identity.avatar', 'identity.team']
+  },
+  (accessToken, refreshToken, profile, done) => {
+    // optionally persist user data into a database
+    done(null, profile);
+  }
+));
+passport.serializeUser(function(user, done) {
+    done(null, user);
+});
+passport.deserializeUser(function(obj, done) {
+    done(null, obj);
+});
+var expressSession = require('express-session');
+var cookieParser = require('cookie-parser');
+var methodOverride = require('method-override');
+app.use(cookieParser());
+app.use(express.static(__dirname + 'public'));
+app.use(expressSession({ secret:'watchingferries', resave: true, saveUninitialized: true, maxAge: (90 * 24 * 3600000) }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(methodOverride('_method'));
 
 const Status = Object.freeze({
     AVAILABLE: { value: 1, name: 'Available', symbol: ':heavy_check_mark:', colour: '#008000' },
@@ -71,53 +88,148 @@ mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
     });
 });
 
+//----------Web App----------
+
 app.get('/', function(req, res) {
-    res.render('auth.ejs');
+    res.render('auth.ejs', {client_id: process.env.CLIENT_ID});
 });
 
-app.get('/dashboard', function(req, res) {
+app.get('/logoff', function(req, res) {
+    res.clearCookie('menrva-e-man');
+    res.redirect('/');
+});
+
+app.get('/auth/slack', passport.authenticate('slack'));
+
+app.get('/auth/slack/callback', 
+    passport.authenticate('Slack', { failureRedirect: '/' }),
+    (req, res) => res.redirect('/setcookie')
+);
+
+app.get('/setcookie', requireUser, function(req, res) {
+    res.cookie('menrva-e-man', new Date());
+    res.redirect('/success');
+});
+
+app.get('/success', requireTeam, function(req, res) {
+    if (req.cookies['menrva-e-man']) {
+        res.redirect('/dashboard');
+    } else {
+        res.redirect('/');
+    }
+});
+
+function requireUser (req, res, next) {
+    if (!req.user) {
+        res.redirect('/');
+    } else {
+        next();
+    }
+};
+
+function requireTeam (req, res, next) {
+    if (!req.user) {
+        res.redirect('/');
+    } else if (req.user.team.id==process.env.TEAM_ID) {
+        next();
+    } else {
+        res.redirect('/');
+    }
+}
+
+function requireLogin (req, res, next) {
+    if (!req.cookies['menrva-e-man']) {
+        res.redirect('/');
+    } else {
+        next();
+    }
+};
+
+app.get('/dashboard', requireLogin, function(req, res) {
     db.collection(COLLECTION).find().toArray((err, result) => {
         if (err) throw err;
-        res.render('index.ejs', {test: result});
+        res.render('index.ejs', {data: result, user: req.user});
     });
 });
 
-// This route handles get request to a /oauth endpoint. We'll use this endpoint for handling the logic of the Slack oAuth process behind our app.
-app.get('/oauth', function(req, res) {
-    console.log('oauth')
-    // When a user authorizes an app, a code query parameter is passed on the oAuth endpoint. If that code is not there, we respond with an error message
-    if (!req.query.code) {
-        res.status(500);
-        res.send({"Error": "Looks like we're not getting a code."});
-        console.log("Looks like we're not getting a code.");
-    } else {
-        // If it's there...
-        // We'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
-        console.log(req)
-        request({
-            url: 'https://slack.com/api/oauth.access', //URL to hit
-            qs: {code: req.query.code, client_id: process.env.CLIENTID, client_secret: process.env.CLIENTSECRET}, //Query string data
-            method: 'GET', //Specify the method
-        }, function (error, response, body) {
-            var JSONresponse = JSON.parse(body);
-            if (error) {
-                console.log(error);
-            } else if (!JSONresponse.ok) {
-                console.log(JSONresponse)
-                res.send("Error encountered: \n"+JSON.stringify(JSONresponse)).status(200).end();
-            } else {
-                console.log(JSONresponse);
-                res.json(body);
-            }
-        })
-    }
+app.delete('/delete/:id', function (req, res) {
+    db.collection(COLLECTION)
+    .deleteOne({_id: new mongoDb.ObjectID(req.params.id)},
+    (err, result) => {
+        if (err) throw err;
+        res.redirect('/dashboard')
+    });
 });
+
+app.post('/new', function(req, res) {
+    req.body.date_added = new Date(Date.now()).toISOString();
+    req.body.date_modified = new Date(Date.now()).toISOString();
+    db.collection(COLLECTION).save(req.body, function(err, result) {
+        if (err) throw err;
+        console.log('saved to database');
+        res.redirect('/');
+    })
+});
+
+// // This route handles get request to a /oauth endpoint. We'll use this endpoint for handling the logic of the Slack oAuth process behind our app.
+// app.get('/oauth', function(req, res) {
+//     console.log('oauth')
+//     // When a user authorizes an app, a code query parameter is passed on the oAuth endpoint. If that code is not there, we respond with an error message
+//     if (!req.query.code) {
+//         res.status(500);
+//         res.send({"Error": "Looks like we're not getting a code."});
+//         console.log("Looks like we're not getting a code.");
+//     } else {
+//         // If it's there...
+//         // We'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
+//         console.log(req)
+//         request({
+//             url: 'https://slack.com/api/oauth.access', //URL to hit
+//             qs: {code: req.query.code, client_id: process.env.CLIENTID, client_secret: process.env.CLIENTSECRET}, //Query string data
+//             method: 'GET', //Specify the method
+//         }, function (error, response, body) {
+//             var JSONresponse = JSON.parse(body);
+//             if (error) {
+//                 console.log(error);
+//             } else if (!JSONresponse.ok) {
+//                 console.log(JSONresponse)
+//                 res.send("Error encountered: \n"+JSON.stringify(JSONresponse)).status(200).end();
+//             } else {
+//                 console.log(JSONresponse);
+//                 res.json(body);
+//             }
+//         })
+//     }
+// });
+
+//----------Slash Commands----------
+
+var verifySlackRequest = function (req, res, next) {
+    const hmac = crypto.createHmac('sha256', '90b69ba2aef617b47303ba13967fac4f');
+    var slack_signature = req.headers['x-slack-signature'];
+    var signature = slack_signature.split('=', 1);
+    version = signature[0];
+    var timestamp = req.headers['x-slack-request-timestamp'];
+    if (Math.abs(Math.round(Date.now() / 1000) - timestamp) > 60 * 5) {
+        return res.status(400).send('Vefification failed');
+    }
+    var basestring = version + ":" + timestamp + ":" + qs.stringify(req.body, { format: 'RFC1738' });
+    hmac.update(basestring);
+    my_signature = version + "=" + hmac.digest('hex');
+    if (crypto.timingSafeEqual(Buffer.from(my_signature, 'utf8'), Buffer.from(slack_signature, 'utf8'))) {
+        next();
+    } else {
+        return res.status(400).send('Vefification failed');
+    }
+};
+
+app.use(verifySlackRequest);
 
 app.post('/query', function(req, res) {
     db.collection(COLLECTION)
     .findOne({asset_number: req.body.text}, {projection: { _id: false }}, function (err, item) {
         if (err) {
-            res.send(500)
+            res.sendStatus(500)
         }
         if (item) {
             var message = printQueryOutput(item);
@@ -200,7 +312,7 @@ app.post('/checkout', function(req, res) {
     db.collection(COLLECTION)
     .findOne({asset_number: args[0]}, function (err, item) {
         if (err) {
-            res.send(500);
+            res.sendStatus(500);
         }
         if (item) {
             if (Status[item.status].value == Status.AVAILABLE.value || (Status[item.status].value == Status.INUSE.value && item.user_id == req.body.user_id)) {
@@ -288,25 +400,6 @@ app.post('/checkin', function(req, res) {
             res.send(message);
         }
     })
-});
-
-app.post('/new', function(req, res) {
-    req.body.date_added = new Date(Date.now()).toISOString();
-    req.body.date_modified = new Date(Date.now()).toISOString();
-    db.collection(COLLECTION).save(req.body, function(err, result) {
-        if (err) throw err;
-        console.log('saved to database');
-        res.redirect('/');
-    })
-});
-
-app.delete('/delete', (req, res) => {
-    db.collection(COLLECTION)
-    .findOneAndDelete({full_name: req.body.full_name},
-    (err, result) => {
-        if (err) throw err;
-        res.send({message: 'deleted'})
-    });
 });
 
 function printQueryOutput(item, isEphemeral=true) {
