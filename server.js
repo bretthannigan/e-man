@@ -31,6 +31,12 @@ mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
     if (err) throw err;
     dbMain = client.db(MAIN_DB);
     dbMain.createCollection(ASSET_DB);
+    dbMain.collection(USERS_DB).save({
+        _id: "000000000",
+        name: 'Unassigned',
+        email: '',
+        date_last_login: new Date(Date.now()).toISOString()
+    });
     //dbMain.createCollection(USERS_DB);
     app.listen(process.env.PORT, function() {
         console.log('listening on ' + process.env.PORT + '.');
@@ -513,7 +519,7 @@ function printDateInfo(item) {
         "elements": [
             {
                 "type": "mrkdwn",
-                "text": "Entry last modified" + (item.user_id ? " by <@" + item.user_id + ">" : "") + " on <!date^" + (Date.parse(item.date_modified) / 1000).toFixed(0) + "^{date_num} {time}|" + item.date_modified.toString() + ">"
+                "text": "Entry last modified" + (item.user_id && item.user_id!=000000000 ? " by <@" + item.user_id + ">" : "") + " on <!date^" + (Date.parse(item.date_modified) / 1000).toFixed(0) + "^{date_num} {time}|" + item.date_modified.toString() + ">"
             }
         ]
     }
