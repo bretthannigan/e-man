@@ -15,41 +15,31 @@ th {
 }
 
 tr {
-    text-align: right;
+    text-align: left;
 }
 
 td {
     padding: 2px;
 }
 
-.mydelete{
+select {
+    width: auto;
+    padding: 2px;
+    font-size: 12pt;
+}
+
+input {
+    width: 120px;
+    font-size: 12pt;
+}
+
+.mydelete {
     color: red;
 }
 
-::placeholder {
-    font-style: italic;
-}
-
-.form-inline {
-    display: flex;
-    flex-flow: row wrap;
-    align-items: flex-end;
-    margin: 10px 0 0 0;
-}
-
-.form-inline label{
-    display: block;
-    margin: 5px 10px 5px 0;
-}
-
-.form-inline input, .form-inline select{
-    margin: 5px 10px 5px 0;
-    padding: 5px;
-}
-
-.form-inline button{
-    margin: 5px 10px 5px 0;
-    padding: 5px 10px;
+.myassetnumber {
+    width: 4em;
+    font-size: 12pt;
 }
 
 @media (max-width:800px) {

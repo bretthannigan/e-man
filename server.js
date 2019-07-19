@@ -20,6 +20,25 @@ app.set('view engine', 'ejs');
 var favicon = require('serve-favicon');
 app.use(favicon(path.join(__dirname + '/views/icons/favicon.ico')));
 
+//----------Database----------
+
+const MAIN_DB = 'main';
+const ASSET_DB = 'assets';
+const USERS_DB = 'users';
+
+var dbMain, dbUsers
+mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
+    if (err) throw err;
+    dbMain = client.db(MAIN_DB);
+    dbMain.createCollection(ASSET_DB);
+    //dbMain.createCollection(USERS_DB);
+    app.listen(process.env.PORT, function() {
+        console.log('listening on ' + process.env.PORT + '.');
+    });
+});
+
+//----------Authentication----------
+
 var passport = require('passport')
 var SlackStrategy = require('passport-slack-oauth2').Strategy;
 passport.use(new SlackStrategy({
@@ -30,6 +49,15 @@ passport.use(new SlackStrategy({
   },
   (accessToken, refreshToken, profile, done) => {
     // optionally persist user data into a database
+    dbMain.collection(USERS_DB).save({ 
+        _id: profile.user.id, 
+        name: profile.user.name, 
+        email: profile.user.email,
+        date_last_login: new Date(Date.now()).toISOString()
+    }, function(err, result) {
+        if (err) throw err;
+        console.log('Saved user to database');
+    });
     done(null, profile);
   }
 ));
@@ -48,6 +76,8 @@ app.use(expressSession({ secret:'watchingferries', resave: true, saveUninitializ
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(methodOverride('_method'));
+
+//----------Options Structures----------
 
 const Status = Object.freeze({
     AVAILABLE: { value: 1, name: 'Available', symbol: ':heavy_check_mark:', colour: '#008000' },
@@ -76,17 +106,6 @@ const Campus = Object.freeze({
     SURREY: { value: 2, name: 'Surrey' },
     BITOFFICE: { value: 3, name: 'BIT Office' }
 })
-
-const COLLECTION = 'main';
-
-var db
-mongoClient.connect(dbUrl, {useNewUrlParser: true}, function(err, client) {
-    if (err) throw err;
-    db = client.db(COLLECTION);
-    app.listen(process.env.PORT, function() {
-        console.log('listening on 80.');
-    });
-});
 
 //----------Web App----------
 
@@ -146,14 +165,24 @@ function requireLogin (req, res, next) {
 };
 
 app.get('/dashboard', requireLogin, function(req, res) {
-    db.collection(COLLECTION).find().toArray((err, result) => {
+    dbMain.collection(ASSET_DB).find().toArray((err, dataQuery) => {
         if (err) throw err;
-        res.render('index.ejs', {data: result, user: req.user});
+        dbMain.collection(USERS_DB).find().toArray((err, usersQuery) => {
+            console.log(req.user)
+            res.render('index.ejs', {
+                data: dataQuery, 
+                allUsers: usersQuery,
+                user: req.user, 
+                statusOptions: Status, 
+                categoryOptions: Category, 
+                campusOptions: Campus,
+            });
+        })
     });
 });
 
 app.delete('/delete/:id', function (req, res) {
-    db.collection(COLLECTION)
+    dbMain.collection(ASSET_DB)
     .deleteOne({_id: new mongoDb.ObjectID(req.params.id)},
     (err, result) => {
         if (err) throw err;
@@ -164,7 +193,8 @@ app.delete('/delete/:id', function (req, res) {
 app.post('/new', function(req, res) {
     req.body.date_added = new Date(Date.now()).toISOString();
     req.body.date_modified = new Date(Date.now()).toISOString();
-    db.collection(COLLECTION).save(req.body, function(err, result) {
+    dbMain.collection(ASSET_DB).save(req.body, function(err, result) {
+        console.log(req.body);
         if (err) throw err;
         console.log('saved to database');
         res.redirect('/dashboard');
@@ -226,7 +256,7 @@ var verifySlackRequest = function (req, res, next) {
 app.use(verifySlackRequest);
 
 app.post('/query', function(req, res) {
-    db.collection(COLLECTION)
+    dbMain.collection(ASSET_DB)
     .findOne({asset_number: req.body.text}, {projection: { _id: false }}, function (err, item) {
         if (err) {
             res.sendStatus(500)
@@ -251,8 +281,8 @@ app.post('/query', function(req, res) {
 
 app.post('/search', function(req, res) {
     const MAX_RESULTS = 5;
-    db.collection(COLLECTION).createIndex({nickname: "text", full_name: "text", manufacturer: "text", model: "text", serial_number: "text", location: "text"});
-    db.collection(COLLECTION)
+    dbMain.collection(ASSET_DB).createIndex({nickname: "text", full_name: "text", manufacturer: "text", model: "text", serial_number: "text", location: "text"});
+    dbMain.collection(ASSET_DB)
     .find({$text: { $search: req.body.text}}, {nickname: 1, full_name: 1, manufacturer: 1, model: 1, serial_number: 1, location: 1})//, { score: { $meta: "textScore"}})
     .project({ score: { $meta: "textScore"}})
     .sort({score: { $meta: "textScore"}})
@@ -309,14 +339,14 @@ app.post('/checkout', function(req, res) {
     } else {
         req.body.date_due = null;
     }
-    db.collection(COLLECTION)
+    dbMain.collection(ASSET_DB)
     .findOne({asset_number: args[0]}, function (err, item) {
         if (err) {
             res.sendStatus(500);
         }
         if (item) {
             if (Status[item.status].value == Status.AVAILABLE.value || (Status[item.status].value == Status.INUSE.value && item.user_id == req.body.user_id)) {
-                db.collection(COLLECTION)
+                dbMain.collection(ASSET_DB)
                 .findOneAndUpdate({_id: item._id}, {
                     $set: {
                         status: "INUSE",
@@ -358,14 +388,14 @@ app.post('/checkin', function(req, res) {
         return;
     };
     req.body.date_modified = new Date(Date.now()).toISOString();
-    db.collection(COLLECTION)
+    dbMain.collection(ASSET_DB)
     .findOne({asset_number: req.body.text}, function (err, item) {
         if (err) {
             res.send(500);
         }
         if (item) {
             if (Status[item.status].value == Status.INUSE.value && item.user_id == req.body.user_id) { 
-                db.collection(COLLECTION)
+                dbMain.collection(ASSET_DB)
                 .findOneAndUpdate({_id: item._id}, {
                     $set: {
                         status: "AVAILABLE",

@@ -6,12 +6,14 @@
   <title>MENRVA Equipment Manager</title>
 </head>
 <body>
-  <h1>MENRVA Equipment Manager - Dashboard</h1>
+  <h1>MENRVA Equipment Manager</h1>
+  <h2>Dashboard</h2>
   Logged in as: <%= user.displayName %> <img src="<%= user.team.image_34 %>" alt="User image"> <a href="../logoff">Log Out</a>
-  <h2>List of Assets</h2>
+  <h3>List of Assets</h3>
   <table class="data" style="width:800px">
     <th>Asset number</th>
     <th>Status</th>
+    <th>User</th>
     <th>Nickname</th>
     <th>Full name</th>
     <th>Category</th>
@@ -23,23 +25,28 @@
     <th>Action</th>
     <tr>
       <form class="form-inline" action="/new" method="POST">
-        <td><input type="number" value="" name="asset_number" id="asset_number" style="width:8em;"></td>
-        <td></td>
+        <td><input class="myassetnumber" type="number" value=<%= data.length>0 ? Math.max.apply(Math, data.map(function(o) { return o.asset_number; })) + 1 : 1 %> name="asset_number" id="asset_number"></td>
+        <td>
+          <select name="status" id="status">
+            <% Object.keys(statusOptions).forEach(function(key) { %>
+              <option value=<%= key %>><%= statusOptions[key].name %></option>
+            <% }) %>
+          </select>
+        </td>
+        <td>
+          <select name="user_id" id="user_id">
+            <% for(var i=0; i<allUsers.length; i++) {%>
+              <option value=<%= allUsers[i]._id %> <%if (allUsers[i]._id==user.id) {%> selected='selected' <%}%>><%= allUsers[i].name %></option>
+            <% } %>
+          </select>
+        </td>
         <td><input type="text" placeholder="e.g. DAQ1" name="nickname" id="nickname"></td>
         <td><input type="text" placeholder="Full name" name="full_name" id="full_name"></td>
         <td>
           <select name="category" id="category">
-              <option value="TESTEQUIPMENT">Test equipment</option>
-              <option value="PROTOTYPING">Prototyping</option>
-              <option value="DATAACQUISITION">Data acquisition</option>
-              <option value="COMPUTERS">Computers</option>
-              <option value="COMPUTERACCESSORIES">Computer accessories</option>
-              <option value="ROBOTICS">Robotics</option>
-              <option value="SENSORS">Sensors</option>
-              <option value="MOTIONTRACKER">Motion tracker</option>
-              <option value="CLINICALDEVICES">Clinical devices</option>
-              <option value="TOOLS">Tools</option>
-              <option value="OTHER">Other</option>
+            <% Object.keys(categoryOptions).forEach(function(key) { %>
+              <option value=<%= key %>><%= categoryOptions[key].name %></option>
+            <% }) %>
             </select>
         </td>
         <td><input type="text" placeholder="e.g. National Instruments" name="manufacturer" id="manufacturer"></td>
@@ -47,9 +54,9 @@
         <td><input type="text" placeholder="Serial number" name="serial_number" id="serial_number"></td>
         <td>
           <select name="campus" id="campus">
-            <option value="BURNABY">Burnaby</option>
-            <option value="SURREY">Surrey</option>
-            <option value="BITOFFICE">BIT Office</option>
+            <% Object.keys(campusOptions).forEach(function(key) { %>
+              <option value=<%= key %>><%= campusOptions[key].name %></option>
+            <% }) %>
           </select>
         </td>
         <td>
@@ -61,24 +68,24 @@
     <% for(var i=0; i<data.length; i++) {%>
       <tr>
         <td><%= data[i].asset_number %></td>
-        <td><%= data[i].status %></td>
+        <td><%= statusOptions[data[i].status].name %></td>
+        <td><%= allUsers.find(o => o._id === data[i].user_id).name %></td>
         <td><%= data[i].nickname %></td>
         <td><%= data[i].full_name %></td>
-        <td><%= data[i].category %></td>
+        <td><%= categoryOptions[data[i].category].name %></td>
         <td><%= data[i].manufacturer %></td>
         <td><%= data[i].model %></td>
         <td><%= data[i].serial_number %></td>
-        <td><%= data[i].campus %></td>
+        <td><%= campusOptions[data[i].campus].name %></td>
         <td><%= data[i].location %></td>
         <td>
           <form method="POST" action="/delete/<%= data[i]._id %>?_method=DELETE">
             <input type="hidden" name="_method" value="delete"/>
-            <button type="submit">Delete</button>
+            <button type="submit" class="mydelete">Delete</button>
           </form>
         </td>
       </tr>
     <% } %>
   </table>
-  <script src="main.js"></script>
 </body>
 </html>
