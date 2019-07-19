@@ -8,74 +8,6 @@
 <body>
   <h1>MENRVA Equipment Manager - Dashboard</h1>
   Logged in as: <%= user.displayName %> <img src="<%= user.team.image_34 %>" alt="User image"> <a href="../logoff">Log Out</a>
-  <h2>Add New Asset</h2>
-  Add a new piece of equipment.
-  <form class="form-inline" action="/new" method="POST">
-    <div>
-      <label for="asset_number">Asset Number</label>
-      <input type="number" value="" name="asset_number" id="asset_number" style="width:8em;">
-    </div>
-    <div>
-      <label for="nickname">Nickname</label>
-      <input type="text" placeholder="e.g. DAQ1" name="nickname" id="nickname">
-    </div>
-    <div>
-      <label for="full_name">Full Name</label>
-      <input type="text" placeholder="Full name" name="full_name" id="full_name">
-    </div>
-  </fieldset>
-    <div>
-      <label for="category">Category</label>
-      <select name="category" id="category">
-        <option value="TESTEQUIPMENT">Test equipment</option>
-        <option value="PROTOTYPING">Prototyping</option>
-        <option value="DATAACQUISITION">Data acquisition</option>
-        <option value="COMPUTERS">Computers</option>
-        <option value="COMPUTERACCESSORIES">Computer accessories</option>
-        <option value="ROBOTICS">Robotics</option>
-        <option value="SENSORS">Sensors</option>
-        <option value="MOTIONTRACKER">Motion tracker</option>
-        <option value="CLINICALDEVICES">Clinical devices</option>
-        <option value="TOOLS">Tools</option>
-        <option value="OTHER">Other</option>
-      </select>
-    </div>
-    <div>
-      <label for="manufacturer">Manufacturer</label>
-      <input type="text" placeholder="e.g. National Instruments" name="manufacturer" id="manufacturer">
-    </div>
-    <div>
-      <label for="model">Model</label>
-      <input type="text" placeholder="e.g. USB-6001" name="model" id="model">
-    </div>
-    <div>
-      <label for="serial_number">Serial number</label>
-      <input type="text" placeholder="Serial number" name="serial_number" id="serial_number">
-    </div>
-    <div>
-      <label for="campus">Campus</label>
-      <select name="campus" id="campus">
-        <option value="BURNABY">Burnaby</option>
-        <option value="SURREY">Surrey</option>
-        <option value="BITOFFICE">BIT Office</option>
-      </select>
-    </div>
-    <div>
-      <label for="location">Location</label>
-      <input type="text" placeholder="e.g. Cabinet 2" name="location" id="location">
-    </div>
-    <div>
-      <label for="status">Status</label>
-      <select name="status" id="status">
-        <option value="AVAILABLE">Available</option>
-        <option value="INUSE">In Use</option>
-        <option value="OUTOFSERVICE">Out of Service</option>
-        <option value="MISSING">Missing</option>
-        <option value="UNKNOWN">Unknown</option>
-      </select>
-    </div>
-    <button type="submit">Submit</button>
-  </form>
   <h2>List of Assets</h2>
   <table class="data" style="width:800px">
     <th>Asset number</th>
@@ -88,7 +20,44 @@
     <th>Serial number</th>
     <th>Campus</th>
     <th>Location</th>
-    <th><span class="mydelete">Delete</span></th>
+    <th>Action</th>
+    <tr>
+      <form class="form-inline" action="/new" method="POST">
+        <td><input type="number" value="" name="asset_number" id="asset_number" style="width:8em;"></td>
+        <td></td>
+        <td><input type="text" placeholder="e.g. DAQ1" name="nickname" id="nickname"></td>
+        <td><input type="text" placeholder="Full name" name="full_name" id="full_name"></td>
+        <td>
+          <select name="category" id="category">
+              <option value="TESTEQUIPMENT">Test equipment</option>
+              <option value="PROTOTYPING">Prototyping</option>
+              <option value="DATAACQUISITION">Data acquisition</option>
+              <option value="COMPUTERS">Computers</option>
+              <option value="COMPUTERACCESSORIES">Computer accessories</option>
+              <option value="ROBOTICS">Robotics</option>
+              <option value="SENSORS">Sensors</option>
+              <option value="MOTIONTRACKER">Motion tracker</option>
+              <option value="CLINICALDEVICES">Clinical devices</option>
+              <option value="TOOLS">Tools</option>
+              <option value="OTHER">Other</option>
+            </select>
+        </td>
+        <td><input type="text" placeholder="e.g. National Instruments" name="manufacturer" id="manufacturer"></td>
+        <td><input type="text" placeholder="e.g. USB-6001" name="model" id="model"></td>
+        <td><input type="text" placeholder="Serial number" name="serial_number" id="serial_number"></td>
+        <td>
+          <select name="campus" id="campus">
+            <option value="BURNABY">Burnaby</option>
+            <option value="SURREY">Surrey</option>
+            <option value="BITOFFICE">BIT Office</option>
+          </select>
+        </td>
+        <td>
+          <input type="text" placeholder="e.g. Cabinet 2" name="location" id="location">
+        </td>
+        <td><button type="submit">Add</button></td>
+      </form>
+    </tr>
     <% for(var i=0; i<data.length; i++) {%>
       <tr>
         <td><%= data[i].asset_number %></td>

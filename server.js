@@ -167,7 +167,7 @@ app.post('/new', function(req, res) {
     db.collection(COLLECTION).save(req.body, function(err, result) {
         if (err) throw err;
         console.log('saved to database');
-        res.redirect('/');
+        res.redirect('/dashboard');
     })
 });
 
