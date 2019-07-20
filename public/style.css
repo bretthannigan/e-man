@@ -23,14 +23,22 @@ td {
 }
 
 select {
+    height: 28px;
     width: auto;
     padding: 2px;
     font-size: 12pt;
 }
 
 input {
+    height: 28px;
     width: 120px;
     font-size: 12pt;
+}
+
+input[type=datetime-local] {
+    height: 28px;
+    width: 240px;
+    padding: 2px;
 }
 
 .mydelete {

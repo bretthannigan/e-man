@@ -12,7 +12,10 @@
   <h3>List of Assets</h3>
   <table class="data" style="width:800px">
     <th>Asset number</th>
+    <th>Date added</th>
     <th>Status</th>
+    <th>Date Modified</th>
+    <th>Date Due</th>
     <th>User</th>
     <th>Nickname</th>
     <th>Full name</th>
@@ -24,8 +27,11 @@
     <th>Location</th>
     <th>Action</th>
     <tr>
+      <% var currentDate = new Date(Date.now()); %>
+      <% var localDate = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60000)).toISOString(); %>
       <form class="form-inline" action="/new" method="POST">
         <td><input class="myassetnumber" type="number" value=<%= data.length>0 ? Math.max.apply(Math, data.map(function(o) { return o.asset_number; })) + 1 : 1 %> name="asset_number" id="asset_number"></td>
+        <td><input type="datetime-local" name="date_added" value=<%= localDate.substring(0, localDate.length - 1) %>></td>
         <td>
           <select name="status" id="status">
             <% Object.keys(statusOptions).forEach(function(key) { %>
@@ -33,10 +39,12 @@
             <% }) %>
           </select>
         </td>
+        <td><input type="datetime-local" name="date_modified" value=<%= localDate.substring(0, localDate.length - 1) %>></td>
+        <td><input type="datetime-local" name="date_due"></td>
         <td>
           <select name="user_id" id="user_id">
             <% for(var i=0; i<allUsers.length; i++) {%>
-              <option value=<%= allUsers[i]._id %> <%if (allUsers[i]._id==user.id) {%> selected='selected' <%}%>><%= allUsers[i].name %></option>
+              <option value=<%= allUsers[i]._id %> <% if (allUsers[i]._id==user.id) {%> selected='selected' <%} %>><%= allUsers[i].name %></option>
             <% } %>
           </select>
         </td>
@@ -68,8 +76,31 @@
     <% for(var i=0; i<data.length; i++) {%>
       <tr>
         <td><%= data[i].asset_number %></td>
+        <td>
+          <% var dateAdded = new Date(data[i].date_added) %>
+          <% var localDateAdded = new Date(dateAdded.getTime() - (dateAdded.getTimezoneOffset() * 60000)).toISOString(); %>
+          <%= localDateAdded.substring(0, localDateAdded.length - 5).replace("T", " ") %>
+        </td>
         <td><%= statusOptions[data[i].status].name %></td>
-        <td><%= allUsers.find(o => o._id === data[i].user_id).name %></td>
+        <td>
+          <% var dateModified = new Date(data[i].date_modified) %>
+          <% var localDateModified = new Date(dateModified.getTime() - (dateModified.getTimezoneOffset() * 60000)).toISOString(); %>
+          <%= localDateModified.substring(0, localDateModified.length - 5).replace("T", " ") %>
+        </td>
+        <td>
+          <% if (data[i].date_due) { %>
+          <%  var dateDue = new Date(data[i].date_due) %>
+          <%  var localDateDue = new Date(dateDue.getTime() - (dateDue.getTimezoneOffset() * 60000)).toISOString(); %>
+          <%= localDateDue.substring(0, localDateDue.length - 5).replace("T", " ") %>
+          <% } else { %>
+          <%= "Not specified" %>
+          <% } %>
+        </td>
+        <% if (allUsers.find(o => o._id === data[i].user_id)) { %>
+          <td><%= allUsers.find(o => o._id === data[i].user_id).name %></td>
+        <% } else { %>
+          <td><%= data[i].user_id %></td>
+        <% } %>
         <td><%= data[i].nickname %></td>
         <td><%= data[i].full_name %></td>
         <td><%= categoryOptions[data[i].category].name %></td>
@@ -87,5 +118,8 @@
       </tr>
     <% } %>
   </table>
+  <p>
+  <a href=mailto:bchannig@sfu.ca?Subject=Equipment%20manager%20bug%20report>Report bug</a>
+  </p>
 </body>
 </html>
