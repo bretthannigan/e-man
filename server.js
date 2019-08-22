@@ -62,7 +62,6 @@ passport.use(new SlackStrategy({
         date_last_login: new Date(Date.now()).toISOString()
     }, function(err, result) {
         if (err) throw err;
-        console.log('Saved user to database');
     });
     done(null, profile);
   }
@@ -171,10 +170,9 @@ function requireLogin (req, res, next) {
 };
 
 app.get('/dashboard', requireLogin, function(req, res) {
-    dbMain.collection(ASSET_DB).find().toArray((err, dataQuery) => {
+    dbMain.collection(ASSET_DB).find().sort({ asset_number: 1 }).toArray((err, dataQuery) => {
         if (err) throw err;
         dbMain.collection(USERS_DB).find().toArray((err, usersQuery) => {
-            console.log(req.user)
             res.render('index.ejs', {
                 data: dataQuery, 
                 allUsers: usersQuery,
@@ -187,7 +185,25 @@ app.get('/dashboard', requireLogin, function(req, res) {
     });
 });
 
-app.delete('/delete/:id', function (req, res) {
+app.get('/edit/:id', requireLogin, function(req, res) {
+    dbMain.collection(ASSET_DB).findOne({_id: new mongoDb.ObjectID(req.params.id)}, function (err, dataQuery) {
+        if (err) throw err;
+        dbMain.collection(USERS_DB).find().toArray((err, usersQuery) => {
+            res.render('edit.ejs', {
+                data: dataQuery,
+                allUsers: usersQuery,
+                user: req.user,
+                statusOptions: Status,
+                categoryOptions: Category,
+                campusOptions: Campus,
+            });
+        })
+    });
+});
+
+app.get('/')
+
+app.delete('/delete/:id', requireLogin, function (req, res) {
     dbMain.collection(ASSET_DB)
     .deleteOne({_id: new mongoDb.ObjectID(req.params.id)},
     (err, result) => {
@@ -197,27 +213,18 @@ app.delete('/delete/:id', function (req, res) {
 });
 
 app.post('/new', function(req, res) {
-    req.body.date_added = new Date(Date.now()).toISOString();
-    req.body.date_modified = new Date(Date.now()).toISOString();
-    dbMain.collection(ASSET_DB).findOneAndUpdate({asset_number: { $eq: req.body.asset_number } }, { $set: req.body }, { asset_number: 1, upsert: true}, function(err, result) {
+    req.body.asset_number = parseInt(req.body.asset_number);
+    dbMain.collection(ASSET_DB).findOneAndUpdate({asset_number: { $eq: req.body.asset_number } }, { $set: req.body }, { asset_number: 1, upsert: true }, function(err, result) {
         if (err) throw err;
-        console.log('saved to database.')
+        console.log(req.body);
         res.redirect('/dashboard');
     })
-    // dbMain.collection(ASSET_DB).save(req.body, function(err, result) {
-    //     console.log(req.body);
-    //     if (err) throw err;
-    //     console.log('saved to database');
-    //     res.redirect('/dashboard');
-    // })
 });
 
 //----------Slash Commands----------
 
 var verifySlackRequest = function (req, res, next) {
     const hmac = crypto.createHmac('sha256', process.env.SIGNING_SECRET);
-    console.log(req.headers)
-    console.log(req)
     var slack_signature = req.headers['x-slack-signature'];
     var signature = slack_signature.split('=', 1);
     version = signature[0];
@@ -239,7 +246,7 @@ app.use(verifySlackRequest);
 
 app.post('/query', function(req, res) {
     dbMain.collection(ASSET_DB)
-    .findOne({asset_number: req.body.text}, {projection: { _id: false }}, function (err, item) {
+    .findOne({asset_number: parseInt(req.body.text)}, {projection: { _id: false }}, function (err, item) {
         if (err) {
             res.sendStatus(500)
         }
@@ -263,18 +270,16 @@ app.post('/query', function(req, res) {
 
 app.post('/search', function(req, res) {
     const MAX_RESULTS = 5;
-    dbMain.collection(ASSET_DB).createIndex({nickname: "text", full_name: "text", manufacturer: "text", model: "text", serial_number: "text", location: "text"});
+    dbMain.collection(ASSET_DB).createIndex({nickname: "text", full_name: "text", manufacturer: "text", model: "text", serial_number: "text", location: "text"}, {name:"myIndex"});
     dbMain.collection(ASSET_DB)
     .find({$text: { $search: req.body.text}}, {nickname: 1, full_name: 1, manufacturer: 1, model: 1, serial_number: 1, location: 1})//, { score: { $meta: "textScore"}})
     .project({ score: { $meta: "textScore"}})
     .sort({score: { $meta: "textScore"}})
     .toArray(function (err, items) {
         if (err) {
-            console.log(err);
             res.sendStatus(500);
             return;
         } 
-        console.log(items)
         if (items.length) {
             var message = printQueryOutput(items);
             if (items.length<=MAX_RESULTS) {
@@ -299,8 +304,6 @@ app.post('/search', function(req, res) {
                 )
             }
         } else {
-            console.log('search else')
-            console.log(items)
             var message = "Did not find any matching assets for search \"*" + req.body.text + "*\".";
         }
         res.send(message);
@@ -322,7 +325,7 @@ app.post('/checkout', function(req, res) {
         req.body.date_due = null;
     }
     dbMain.collection(ASSET_DB)
-    .findOne({asset_number: args[0]}, function (err, item) {
+    .findOne({asset_number: parseInt(args[0])}, function (err, item) {
         if (err) {
             res.sendStatus(500);
         }
@@ -371,7 +374,7 @@ app.post('/checkin', function(req, res) {
     };
     req.body.date_modified = new Date(Date.now()).toISOString();
     dbMain.collection(ASSET_DB)
-    .findOne({asset_number: req.body.text}, function (err, item) {
+    .findOne({asset_number: parseInt(req.body.text)}, function (err, item) {
         if (err) {
             res.send(500);
         }
@@ -381,7 +384,7 @@ app.post('/checkin', function(req, res) {
                 .findOneAndUpdate({_id: item._id}, {
                     $set: {
                         status: "AVAILABLE",
-                        user_id: req.body.user_id,
+                        user_id: "000000000",
                         date_modified: req.body.date_modified,
                         date_due: ''
                     }
@@ -495,7 +498,7 @@ function printDateInfo(item) {
         "elements": [
             {
                 "type": "mrkdwn",
-                "text": "Entry last modified" + (item.user_id && item.user_id!=000000000 ? " by <@" + item.user_id + ">" : "") + " on <!date^" + (Date.parse(item.date_modified) / 1000).toFixed(0) + "^{date_num} {time}|" + item.date_modified.toString() + ">"
+                "text": "Entry last modified" + (item.user_id && item.user_id!="000000000" ? " by <@" + item.user_id + ">" : "") + " on <!date^" + (Date.parse(item.date_modified) / 1000).toFixed(0) + "^{date_num} {time}|" + item.date_modified.toString() + ">"
             }
         ]
     }

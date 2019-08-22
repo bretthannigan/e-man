@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="/style.css">
   <title>MENRVA Equipment Manager</title>
 </head>
 <body>
@@ -30,7 +30,7 @@
       <% var currentDate = new Date(Date.now()); %>
       <% var localDate = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60000)).toISOString(); %>
       <form class="form-inline" action="/new" method="POST">
-        <td><input class="myassetnumber" type="number" value=<%= data.length>0 ? Math.max.apply(Math, data.map(function(o) { return o.asset_number; })) + 1 : 1 %> name="asset_number" id="asset_number"></td>
+        <td><input class="myassetnumber" type="number" step="1" value=<%= data.length>0 ? Math.max.apply(Math, data.map(function(o) { return o.asset_number; })) + 1 : 1 %> name="asset_number" id="asset_number"></td>
         <td><input type="datetime-local" name="date_added" value=<%= localDate.substring(0, localDate.length - 1) %>></td>
         <td>
           <select name="status" id="status">
@@ -113,6 +113,10 @@
           <form method="POST" action="/delete/<%= data[i]._id %>?_method=DELETE">
             <input type="hidden" name="_method" value="delete"/>
             <button type="submit" class="mydelete">Delete</button>
+          </form>
+          <form method="GET" action="/edit/<%= data[i]._id %>?_method=GET">
+            <input type="hidden" name="_method" value="get"/>
+            <button type="submit">Edit</button>
           </form>
         </td>
       </tr>

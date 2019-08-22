@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <title>MENRVA Equipment Manager</title>
+</head>
+<body>
+  <h1>MENRVA Equipment Manager</h1>
+  <h2>Dashboard</h2>
+  Logged in as: <%= user.displayName %> <img src="<%= user.team.image_34 %>" alt="User image"> <a href="../logoff">Log Out</a>
+  <h3>Edit Asset</h3>
+  <table class="data" style="width:800px">
+    <th>Asset number</th>
+    <th>Date added</th>
+    <th>Status</th>
+    <th>Date Modified</th>
+    <th>Date Due</th>
+    <th>User</th>
+    <th>Nickname</th>
+    <th>Full name</th>
+    <th>Category</th>
+    <th>Manufacturer</th>
+    <th>Model</th>
+    <th>Serial number</th>
+    <th>Campus</th>
+    <th>Location</th>
+    <th>Action</th>
+    <tr>
+      <% var currentDate = new Date(Date.now()); %>
+      <% var localDate = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60000)).toISOString(); %>
+      <form class="form-inline" action="/new" method="POST">
+        <td><input class="myassetnumber" type="number" step="1" name="asset_number" id="asset_number" value=<%= data.asset_number %>></td>
+        <% var dateAdded = new Date(data.date_added) %>
+        <% var localDateAdded = new Date(dateAdded.getTime() - (dateAdded.getTimezoneOffset() * 60000)).toISOString(); %>
+        <td><input type="datetime-local" name="date_added" value=<%= localDateAdded.substring(0, localDateAdded.length - 5) %>></td>
+        <td>
+          <select name="status" id="status">
+            <% Object.keys(statusOptions).forEach(function(key) { %>
+              <option value=<%= key %> <% if (key==data.status) {%> selected='selected' <%} %>><%= statusOptions[key].name %></option>
+            <% }) %>
+          </select>
+        </td>
+        <% var dateModified = new Date(data.date_modified) %>
+        <% var localDateModified = new Date(dateModified.getTime() - (dateModified.getTimezoneOffset() * 60000)).toISOString(); %>
+        <td><input type="datetime-local" name="date_modified" value=<%= localDateModified.substring(0, localDateModified.length - 5) %>></td>
+        <td><input type="datetime-local" name="date_due"></td>
+        <td>
+          <select name="user_id" id="user_id">
+            <% for(var i=0; i<allUsers.length; i++) {%>
+              <option value=<%= allUsers[i]._id %> <% if (allUsers[i]._id==data.user_id) {%> selected='selected' <%} %>><%= allUsers[i].name %></option>
+            <% } %>
+          </select>
+        </td>
+        <td><input type="text" placeholder="e.g. DAQ1" name="nickname" id="nickname" value="<%= data.nickname %>"></td>
+        <td><input type="text" placeholder="Full name" name="full_name" id="full_name" value="<%= data.full_name %>"></td>
+        <td>
+          <select name="category" id="category">
+            <% Object.keys(categoryOptions).forEach(function(key) { %>
+                <option value=<%= key %> <% if (key==data.category) {%> selected='selected' <%} %>><%= categoryOptions[key].name %></option>
+            <% }) %>
+            </select>
+        </td>
+        <td><input type="text" placeholder="e.g. National Instruments" name="manufacturer" id="manufacturer" value="<%= data.manufacturer %>""></td>
+        <td><input type="text" placeholder="e.g. USB-6001" name="model" id="model" value="<%= data.model %>"></td>
+        <td><input type="text" placeholder="Serial number" name="serial_number" id="serial_number" value="<%= data.serial_number %>"></td>
+        <td>
+          <select name="campus" id="campus">
+            <% Object.keys(campusOptions).forEach(function(key) { %>
+              <option value=<%= key %> <% if (key==data.campus) {%> selected='selected' <%} %>><%= campusOptions[key].name %></option>
+            <% }) %>
+          </select>
+        </td>
+        <td>
+          <input type="text" placeholder="e.g. Cabinet 2" name="location" id="location" value="<%= data.location %>">
+        </td>
+        <td><button type="submit">Save</button></td>
+      </form>
+    </tr>
+  </table>
+  <p>
+  <a href=mailto:bchannig@sfu.ca?Subject=Equipment%20manager%20bug%20report>Report bug</a>
+  </p>
+</body>
+</html>
