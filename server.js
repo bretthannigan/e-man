@@ -294,7 +294,7 @@ app.post('/search', function(req, res) {
                     }
                 )
             } else {
-                message = printQueryOutput(items(0, MAX_RESULTS));
+                message = printQueryOutput(items.slice(0, MAX_RESULTS));
                 message.blocks.unshift(
                     {
                         "type": "section",
