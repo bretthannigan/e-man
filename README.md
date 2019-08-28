@@ -1,6 +1,6 @@
+<img align="right" src="https://github.com/bretthannigan/e-man/blob/master/views/icons/apple-touch-icon.png?raw=true" alt="E-man Logo" title="E-man manages equipment like a superhero!">
 # e-man
 Slack app and web interface for managing equipment usage.
-<img align="right" src="https://github.com/bretthannigan/e-man/blob/master/views/icons/apple-touch-icon.png?raw=true" alt="E-man Logo" title="E-man manages equipment like a superhero!">
 
 ## Equipment Manager Instructions for Use
 
