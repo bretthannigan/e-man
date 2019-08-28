@@ -1,6 +1,8 @@
 # e-man
 Slack app and web interface for managing equipment usage.
 
+![e-man Logo](https://raw.githubusercontent.com/bretthannigan/e-man/master/views/icons/mstile-150x150.png "E-man manages equipment like a superhero!")
+
 ## Equipment Manager Instructions for Use
 
 The following 4 actions are slash commands done in Slack. Type a forward slash and begin typing the command into the text area to see an auto-complete list of supported commands.
