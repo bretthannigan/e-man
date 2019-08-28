@@ -281,8 +281,9 @@ app.post('/search', function(req, res) {
             return;
         } 
         if (items.length) {
-            var message = printQueryOutput(items);
+            var message;
             if (items.length<=MAX_RESULTS) {
+                message = printQueryOutput(items);
                 message.blocks.unshift(
                     {
                         "type": "section",
@@ -293,6 +294,7 @@ app.post('/search', function(req, res) {
                     }
                 )
             } else {
+                message = printQueryOutput(items(0, MAX_RESULTS));
                 message.blocks.unshift(
                     {
                         "type": "section",
