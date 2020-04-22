@@ -109,7 +109,8 @@ const Category = Object.freeze({
 const Campus = Object.freeze({
     BURNABY: { value: 1, name: 'Burnaby' },
     SURREY: { value: 2, name: 'Surrey' },
-    BITOFFICE: { value: 3, name: 'BIT Office' }
+    BITOFFICE: { value: 3, name: 'BIT Office' },
+    HOME: { value: 4, name: 'Home/Off-Campus' }
 })
 
 //----------Web App----------
