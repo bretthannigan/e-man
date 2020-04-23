@@ -10,7 +10,7 @@ The following 4 actions are slash commands done in Slack. Type a forward slash a
 
 From any channel in the menrva-sfu Slack workspace, type the command:
 `/eman-query [asset-number]`
-Where `[asset-number]` is the equipment tracking number. Don’t know the number? Either look at the web page here or use the search function below. If found, you will get a summary of the equipment that looks like this:
+Where `[asset-number]` is the equipment tracking number. Don’t know the number? Either look at the web page [here](http://ec2-52-25-111-176.us-west-2.compute.amazonaws.com) or use the search function below. If found, you will get a summary of the equipment that looks like this:
 
 ### Searching equipment
 
