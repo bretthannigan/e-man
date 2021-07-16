@@ -12,17 +12,23 @@ From any channel in the menrva-sfu Slack workspace, type the command:
 `/eman-query [asset-number]`
 Where `[asset-number]` is the equipment tracking number. Don’t know the number? Either look at the web page [here](http://ec2-52-25-111-176.us-west-2.compute.amazonaws.com) or use the search function below. If found, you will get a summary of the equipment that looks like this:
 
+<img src="https://github.com/bretthannigan/e-man/blob/master/QueryScreenshot.PNG?raw=true" alt="Query example" title="Slack query">
+
 ### Searching equipment
 
 From any channel in the menrva-sfu Slack workspace, type the command:
 `/eman-search [keyword]`
 Where `[keyword]` matches the nickname, full name, manufacturer, model, serial number, or specific location. The tool then returns the top 5 matches, if found, in a format similar to the previous command.
 
+<img src="https://github.com/bretthannigan/e-man/blob/master/SearchScreenshot.PNG?raw=true" alt="Search example" title="Slack search">
+
 ### Checking out equipment
 
 From the equipment channel in the menrva-sfu Slack workspace, type the command:
 `/eman-checkout [asset-number] (number-of-days)`
 Where `[asset-number]` is the equipment tracking number and `(number-of-days)` is an optional parameter to specify the number of days you want to reserve the equipment for.
+
+<img src="https://github.com/bretthannigan/e-man/blob/master/CheckoutScreenshot.PNG?raw=true" alt="Checkout example" title="Slack checkout">
 
 ### Checking in equipment
 
